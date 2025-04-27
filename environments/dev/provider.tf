@@ -9,23 +9,23 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "6.32.0"
+      version = "~> 6.32"
     }
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = "6.32.0"
+      version = "~> 6.32"
     }
   }
 }
 
 provider "google" {
-  credentials = file(var.credentials_file)
+  credentials = var.credentials_file != "" ? file(var.credentials_file) : null
   project     = var.project_id
   region      = var.region
 }
 
 provider "google-beta" {
-  credentials = file(var.credentials_file)
+  credentials = var.credentials_file != "" ? file(var.credentials_file) : null
   project     = var.project_id
   region      = var.region
 }
