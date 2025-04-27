@@ -1,0 +1,49 @@
+name: Terraform Apply for Production
+
+on:
+  push:
+    branches:
+      - prod
+
+jobs:
+  terraform-apply:
+    name: Terraform Apply Production
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.11.3
+
+      - name: Setup GCP Credentials
+        run: |
+          echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > /tmp/account.json
+        shell: bash
+
+      - name: Override tfvars for GitHub Actions
+        run: |
+          echo 'credentials_file = ""' > environments/prod/terraform.override.tfvars
+
+      - name: Terraform Init
+        working-directory: environments/prod
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
+        run: terraform init
+
+      - name: Terraform Format Check
+        working-directory: environments/prod
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: environments/prod
+        run: terraform validate
+
+      - name: Terraform Apply
+        working-directory: environments/prod
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
+        run: terraform apply -auto-approve -var-file="terraform.override.tfvars"
