@@ -1,14 +1,19 @@
-name: Terraform Apply for Production
+name: Terraform Prod
 
 on:
+  pull_request:
+    branches:
+      - prod
   push:
     branches:
-      - main
+      - prod
 
 jobs:
-  terraform-apply:
-    name: Terraform Apply Production
+  terraform:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
 
     steps:
       - name: Checkout Repository
@@ -21,8 +26,7 @@ jobs:
 
       - name: Setup GCP Credentials
         run: |
-          echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > /tmp/account.json
-        shell: bash
+          echo "${{ secrets.GCP_SA_KEY_B64_PROD }}" | base64 -d > /tmp/account.json
 
       - name: Override tfvars for GitHub Actions
         run: |
@@ -42,8 +46,13 @@ jobs:
         working-directory: environments/prod
         run: terraform validate
 
-      - name: Terraform Apply
+      - name: Terraform Plan or Apply
         working-directory: environments/prod
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
-        run: terraform apply -auto-approve -var-file="terraform.override.tfvars"
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            terraform plan -var-file="terraform.override.tfvars"
+          else
+            terraform apply -auto-approve -var-file="terraform.override.tfvars"
+          fi
