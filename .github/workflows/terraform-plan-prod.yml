@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - prod
+      - main
 
 jobs:
   terraform-plan:

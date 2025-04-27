@@ -3,7 +3,7 @@ name: Terraform Apply for Production
 on:
   push:
     branches:
-      - prod
+      - main
 
 jobs:
   terraform-apply:
