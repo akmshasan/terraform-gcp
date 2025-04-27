@@ -25,6 +25,10 @@ jobs:
           echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > /tmp/account.json
         shell: bash
 
+      - name: Override tfvars for GitHub Actions
+        run: |
+          echo 'credentials_file = ""' > environments/dev/terraform.override.tfvars
+
       - name: Terraform Init
         working-directory: environments/dev
         env:
@@ -43,4 +47,4 @@ jobs:
         working-directory: environments/dev
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
-        run: terraform plan
+        run: terraform plan -var-file="terraform.override.tfvars"
