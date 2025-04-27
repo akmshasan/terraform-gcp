@@ -40,7 +40,11 @@ terraform.rc
 *.tfstate
 *.tfstate.backup
 
-# Sensitive files
+# Secrets
 *.json
 *.pem
 *.key
+*.crt
+
+# Other
+*.log

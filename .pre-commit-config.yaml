@@ -1,0 +1,15 @@
+# .pre-commit-config.yaml
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files # Prevent >500kB files
+      - id: detect-private-key # Detect private keys accidentally added
+      - id: check-json # Check json file syntax
+      - id: end-of-file-fixer # Ensure no extra newlines
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.77.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_validate
