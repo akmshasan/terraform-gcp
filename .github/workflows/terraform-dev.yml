@@ -1,18 +1,22 @@
-name: Terraform Plan
+name: Terraform Dev
 
 on:
   pull_request:
     branches:
       - dev
-      - main
+  push:
+    branches:
+      - dev
 
 jobs:
   terraform:
-    name: Terraform Plan
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -22,8 +26,7 @@ jobs:
 
       - name: Setup GCP Credentials
         run: |
-          echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > /tmp/account.json
-        shell: bash
+          echo "${{ secrets.GCP_SA_KEY_B64_DEV }}" | base64 -d > /tmp/account.json
 
       - name: Override tfvars for GitHub Actions
         run: |
@@ -43,8 +46,13 @@ jobs:
         working-directory: environments/dev
         run: terraform validate
 
-      - name: Terraform Plan
+      - name: Terraform Plan or Apply
         working-directory: environments/dev
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
-        run: terraform plan -var-file="terraform.override.tfvars"
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            terraform plan -var-file="terraform.override.tfvars"
+          else
+            terraform apply -auto-approve -var-file="terraform.override.tfvars"
+          fi
