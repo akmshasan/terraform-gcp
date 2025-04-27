@@ -2,7 +2,7 @@ terraform {
   required_version = "~> 1.11.3"
 
   backend "gcs" {
-    bucket = "learning-gcs-tfstate"
+    bucket = "learning-gcs-tfstate-prod"
     prefix = "env/prod"
   }
 
