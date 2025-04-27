@@ -4,20 +4,14 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "terraform/**"
 
 jobs:
-  terraform-apply:
+  terraform:
     name: Terraform Apply
     runs-on: ubuntu-latest
 
-    permissions:
-      id-token: write
-      contents: read
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -25,20 +19,31 @@ jobs:
         with:
           terraform_version: 1.11.3
 
-      - name: Authenticate to GCP
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Setup GCP Credentials
+        run: |
+          echo "${{ secrets.GCP_SA_KEY_B64 }}" | base64 -d > /tmp/account.json
+        shell: bash
 
-      - name: Set up GCP CLI
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      - name: Override tfvars for GitHub Actions
+        run: |
+          echo 'credentials_file = ""' > environments/dev/terraform.override.tfvars
 
       - name: Terraform Init
-        working-directory: terraform/environments/dev
+        working-directory: environments/dev
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
         run: terraform init
 
+      - name: Terraform Format Check
+        working-directory: environments/dev
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Validate
+        working-directory: environments/dev
+        run: terraform validate
+
       - name: Terraform Apply
-        working-directory: terraform/environments/dev
-        run: terraform apply -auto-approve
+        working-directory: environments/dev
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/account.json
+        run: terraform apply -auto-approve -var-file="terraform.override.tfvars"
