@@ -13,7 +13,7 @@ module "router_nat" {
   source = "../../modules/router_nat"
 
   router_config = {
-    router_name = "learning-router-dev"
+    router_name = "learning-router-prod"
     region      = var.region
     network     = module.vpc-prod.network_self_link
   }
