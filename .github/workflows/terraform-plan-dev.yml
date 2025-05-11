@@ -1,0 +1,43 @@
+name: Terraform Plan (Dev)
+
+on:
+  push:
+    branches: [dev]
+    paths:
+      - "environments/dev/**"
+  pull_request:
+    branches: [dev]
+    paths:
+      - "environments/dev/**"
+
+env:
+  GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-creds.json
+
+jobs:
+  plan-dev:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Decode GCP Service Account Key
+        run: |
+          echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > "$GOOGLE_APPLICATION_CREDENTIALS"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.4
+
+      - name: Terraform Init
+        working-directory: environments/dev
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: environments/dev
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: environments/dev
+        run: terraform plan
