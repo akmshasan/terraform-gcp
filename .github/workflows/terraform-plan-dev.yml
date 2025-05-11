@@ -18,14 +18,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Decode GCP Service Account Key
-        run: |
-          echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > "$GOOGLE_APPLICATION_CREDENTIALS"
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > "$GOOGLE_APPLICATION_CREDENTIALS"
 
-      - name: Setup Terraform
+      - name: Set up Terraform
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.11.4
@@ -34,13 +33,31 @@ jobs:
         working-directory: environments/dev
         run: terraform init
 
-      - name: Terraform Format
+      - name: Terraform FMT Check
         working-directory: environments/dev
-        run: terraform fmt -recursive
+        run: terraform fmt -check
 
       - name: Terraform Validate
         working-directory: environments/dev
         run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v3
+        with:
+          tflint_version: latest
+
+      - name: Run TFLint
+        working-directory: environments/dev
+        run: |
+          tflint --init
+          tflint --recursive
+
+      - name: Run Checkov (Security Scan)
+        run: |
+          pip install checkov
+          checkov -d environments/dev --soft-fail -o github_failed_only
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Terraform Plan
         working-directory: environments/dev
