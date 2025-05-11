@@ -1,0 +1,39 @@
+name: Restrict PRs to Main (Only from dev or prod)
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate-pr-source:
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write # Required to comment and close PRs
+
+    steps:
+      - name: Check PR source branch
+        id: check
+        run: |
+          echo "source_branch=${{ github.head_ref }}" >> "$GITHUB_OUTPUT"
+          if [[ "${{ github.head_ref }}" != "dev" && "${{ github.head_ref }}" != "prod" ]]; then
+            echo "unauthorized=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "unauthorized=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Comment and Close PR if unauthorized
+        if: steps.check.outputs.unauthorized == 'true'
+        run: |
+          echo "❌ Blocking pull request from unauthorized source branch: ${{ github.head_ref }}"
+
+          # Comment on the PR
+          gh pr comment "$PR_URL" \
+            --body "❌ Pull requests to \`main\` are only allowed from \`dev\` or \`prod\` branches. This PR will be closed automatically."
+
+          # Close the PR
+          gh pr close "$PR_URL"
+
+          exit 1
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
