@@ -114,5 +114,6 @@ $RECYCLE.BIN/
 # Custom Files
 terraform-gcp-sa.json
 check-nat-ip-bindings.sh
+generate-docs.sh
 
 # End of https://www.toptal.com/developers/gitignore/api/terraform,macos,linux,windows
