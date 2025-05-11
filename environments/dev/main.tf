@@ -65,11 +65,19 @@ module "cloudrouter" {
 }
 
 # Cloud NAT
-module "nat_ip_vpc_a" {
+module "nat_ip_vpc_a_1" {
   source     = "../../modules/public_ip"
   depends_on = [module.vpc]
 
-  name   = "dev-nat-ip-vpc-a"
+  name   = "dev-nat-ip-vpc-a-1"
+  region = var.region
+}
+
+module "nat_ip_vpc_a_2" {
+  source     = "../../modules/public_ip"
+  depends_on = [module.vpc]
+
+  name   = "dev-nat-ip-vpc-a-2"
   region = var.region
 }
 
@@ -84,14 +92,14 @@ module "nat_ip_vpc_b" {
 module "cloudnat" {
   source     = "../../modules/cloudnat"
   project_id = var.project_id
-  depends_on = [module.cloudrouter, module.nat_ip_vpc_a, module.nat_ip_vpc_b]
+  depends_on = [module.cloudrouter, module.nat_ip_vpc_a_1, module.nat_ip_vpc_a_2, module.nat_ip_vpc_b]
 
   nats = {
     "dev-vpc-a-nat-1" = {
       name    = "dev-vpc-a-nat-1"
       region  = var.region
       router  = module.cloudrouter.router_names["dev-vpc-a-router"]
-      nat_ips = [module.nat_ip_vpc_a.name]
+      nat_ips = [module.nat_ip_vpc_a_1.name, module.nat_ip_vpc_a_2.name]
     },
     "dev-vpc-b-nat-1" = {
       name    = "dev-vpc-b-nat-1"
