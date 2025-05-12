@@ -12,34 +12,35 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Set Environment Folder
-        id: env
+      - name: Detect Changed Environments
+        id: changes
         run: |
-          if git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep '^environments/dev/'; then
-            echo "env_folder=environments/dev" >> $GITHUB_OUTPUT
-          elif git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep '^environments/prod/'; then
-            echo "env_folder=environments/prod" >> $GITHUB_OUTPUT
-          else
-            echo "env_folder=" >> $GITHUB_OUTPUT
-          fi
+          changed_dirs=$(git diff-tree --no-commit-id --name-only -r ${{ github.sha }} \
+            | grep -E '^projects/[^/]+/environments/(dev|prod)/' \
+            | cut -d '/' -f1-4 \
+            | sort -u)
+
+          echo "changed=${changed_dirs}" >> $GITHUB_OUTPUT
 
       - name: Exit if No Matching Env
-        if: steps.env.outputs.env_folder == ''
-        run: echo "No changes to dev or prod environments. Skipping apply."
+        if: steps.changes.outputs.changed == ''
+        run: echo "No dev/prod environment changes detected. Skipping."
 
       - name: Decode GCP SA
-        if: steps.env.outputs.env_folder != ''
+        if: steps.changes.outputs.changed != ''
         run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > gcp-creds.json
 
       - name: Set up Terraform
-        if: steps.env.outputs.env_folder != ''
+        if: steps.changes.outputs.changed != ''
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.11.4
 
-      - name: Terraform Init & Apply
-        if: steps.env.outputs.env_folder != ''
-        working-directory: ${{ steps.env.outputs.env_folder }}
+      - name: Terraform Init & Apply (per env)
+        if: steps.changes.outputs.changed != ''
         run: |
-          terraform init
-          terraform apply -auto-approve
+          for env_dir in ${{ steps.changes.outputs.changed }}; do
+            echo "==> Applying in $env_dir"
+            terraform -chdir=$env_dir init
+            terraform -chdir=$env_dir apply -auto-approve
+          done

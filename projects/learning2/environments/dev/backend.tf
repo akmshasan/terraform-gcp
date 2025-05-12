@@ -1,6 +1,6 @@
 terraform {
   backend "gcs" {
     bucket = "learning-gcs-tfstate"
-    prefix = "dev"
+    prefix = "learning2/dev"
   }
 }
