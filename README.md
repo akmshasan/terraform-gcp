@@ -8,16 +8,58 @@ This repository manages **modular and environment-specific infrastructure on Goo
 
 ```bash
 .
-├── environments/
-│   ├── dev/     # Development environment
-│   └── prod/    # Production environment
-├── modules/     # Reusable Terraform modules
-│   ├── vpc/
-│   ├── subnets/
-│   ├── cloudrouter/
-│   ├── cloudnat/
-│   └── public_ip/
-└── .github/workflows/  # CI for plan, apply, lint, security
+├── CONTRIBUTING.md
+├── environments
+│   ├── dev
+│   │   ├── backend.tf
+│   │   ├── check-nat-ip-bindings.sh
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── provider.tf
+│   │   ├── README.md
+│   │   ├── service_accounts.tf
+│   │   ├── variables.tf
+│   │   └── vm.tf
+│   └── prod
+├── generate-docs.sh
+├── modules
+│   ├── cloudnat
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   └── variables.tf
+│   ├── cloudrouter
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   └── variables.tf
+│   ├── public_ip
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   └── variables.tf
+│   ├── service_account
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   └── variables.tf
+│   ├── subnets
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   └── variables.tf
+│   ├── vm_instance
+│   │   ├── main.tf
+│   │   ├── outputs.tf
+│   │   ├── README.md
+│   │   └── variables.tf
+│   └── vpc
+│       ├── main.tf
+│       ├── outputs.tf
+│       ├── README.md
+│       └── variables.tf
+├── README.md
+├── SECURITY.md
 ```
 
 ---
@@ -60,8 +102,8 @@ This repository manages **modular and environment-specific infrastructure on Goo
 ```bash
 cd environments/dev
 terraform init
-terraform plan -var-file="terraform.tfvars"
-terraform apply -var-file="terraform.tfvars"
+terraform plan"
+terraform apply"
 ```
 
 ### Push to `dev` branch → triggers:
