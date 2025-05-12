@@ -2,12 +2,18 @@ name: Terraform Plan (Prod)
 
 on:
   push:
-    branches: [prod]
+    branches: [main]
     paths:
-      - "environments/prod/**"
+      - "projects/learning/environments/prod/**"
+      - "projects/learning2/environments/prod/**"
 
 jobs:
-  call-plan:
+  plan-learning:
     uses: ./.github/workflows/terraform-plan.yml
     with:
-      environment: prod
+      environment: projects/learning/environments/prod
+
+  plan-learning2:
+    uses: ./.github/workflows/terraform-plan.yml
+    with:
+      environment: projects/learning2/environments/prod

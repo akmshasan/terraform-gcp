@@ -4,10 +4,16 @@ on:
   push:
     branches: [dev]
     paths:
-      - "environments/dev/**"
+      - "projects/learning/environments/dev/**"
+      - "projects/learning2/environments/dev/**"
 
 jobs:
-  call-plan:
+  plan-learning:
     uses: ./.github/workflows/terraform-plan.yml
     with:
-      environment: dev
+      environment: projects/learning/environments/dev
+
+  plan-learning2:
+    uses: ./.github/workflows/terraform-plan.yml
+    with:
+      environment: projects/learning2/environments/dev

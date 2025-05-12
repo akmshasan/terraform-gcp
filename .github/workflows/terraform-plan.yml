@@ -1,43 +1,48 @@
-name: Terraform Plan (Reusable)
+name: Terraform Plan
 
 on:
-  workflow_call:
-    inputs:
-      environment:
-        required: true
-        type: string
+  pull_request:
+    branches: [main]
 
 jobs:
   plan:
     runs-on: ubuntu-latest
 
-    env:
-      GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/gcp-creds.json
-
     steps:
-      - name: Checkout repo
+      - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Decode GCP Service Account
-        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > "$GOOGLE_APPLICATION_CREDENTIALS"
+      - name: Detect Changed Environments
+        id: changes
+        run: |
+          changed_dirs=$(git diff --name-only origin/main...HEAD \
+            | grep -E '^projects/[^/]+/environments/(dev|prod)/' \
+            | cut -d '/' -f1-4 \
+            | sort -u)
 
-      - name: Setup Terraform
+          echo "changed=${changed_dirs}" >> $GITHUB_OUTPUT
+
+      - name: Exit if No Matching Env
+        if: steps.changes.outputs.changed == ''
+        run: echo "No dev/prod environment changes detected. Skipping."
+
+      - name: Decode GCP SA
+        if: steps.changes.outputs.changed != ''
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > gcp-creds.json
+
+      - name: Set up Terraform
+        if: steps.changes.outputs.changed != ''
         uses: hashicorp/setup-terraform@v2
         with:
           terraform_version: 1.11.4
 
-      - name: Terraform Init
-        working-directory: environments/${{ inputs.environment }}
-        run: terraform init
-
-      - name: Terraform Format
-        working-directory: environments/${{ inputs.environment }}
-        run: terraform fmt -check
-
-      - name: Terraform Validate
-        working-directory: environments/${{ inputs.environment }}
-        run: terraform validate
-
-      - name: Terraform Plan
-        working-directory: environments/${{ inputs.environment }}
-        run: terraform plan
+      - name: Terraform Init & Plan (per env)
+        if: steps.changes.outputs.changed != ''
+        run: |
+          for env_dir in ${{ steps.changes.outputs.changed }}; do
+            echo "==> Planning in $env_dir"
+            terraform -chdir=$env_dir init
+            terraform -chdir=$env_dir fmt -check
+            terraform -chdir=$env_dir validate
+            terraform -chdir=$env_dir plan
+          done
