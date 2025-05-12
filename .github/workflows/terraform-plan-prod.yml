@@ -1,0 +1,13 @@
+name: Terraform Plan (Prod)
+
+on:
+  push:
+    branches: [prod]
+    paths:
+      - "environments/prod/**"
+
+jobs:
+  call-plan:
+    uses: ./.github/workflows/terraform-plan.yml
+    with:
+      environment: prod

@@ -1,0 +1,45 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set Environment Folder
+        id: env
+        run: |
+          if git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep '^environments/dev/'; then
+            echo "env_folder=environments/dev" >> $GITHUB_OUTPUT
+          elif git diff-tree --no-commit-id --name-only -r ${{ github.sha }} | grep '^environments/prod/'; then
+            echo "env_folder=environments/prod" >> $GITHUB_OUTPUT
+          else
+            echo "env_folder=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Exit if No Matching Env
+        if: steps.env.outputs.env_folder == ''
+        run: echo "No changes to dev or prod environments. Skipping apply."
+
+      - name: Decode GCP SA
+        if: steps.env.outputs.env_folder != ''
+        run: echo "${{ secrets.GCP_SA_KEY_BASE64 }}" | base64 -d > gcp-creds.json
+
+      - name: Set up Terraform
+        if: steps.env.outputs.env_folder != ''
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.11.4
+
+      - name: Terraform Init & Apply
+        if: steps.env.outputs.env_folder != ''
+        working-directory: ${{ steps.env.outputs.env_folder }}
+        run: |
+          terraform init
+          terraform apply -auto-approve
